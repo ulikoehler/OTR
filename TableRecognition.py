@@ -56,30 +56,6 @@ def angle_degrees(dx, dy):
     if dx == 0: return 180.
     return np.rad2deg(np.arctan2(dx, dy))
 
-class TableAdjacencyMap(object):
-    def __init__(self, cell_polys, node_coordinates):
-        self.node_coordinates = node_coordinates
-
-    def find_filtered_table_corners(self, contour_analyzer):
-        """
-        Filters the result from find_table_corners() so that only
-        the 4 extreme-most remain
-        """
-        corner_idxs = self.find_table_corners()
-        corner_coords = contour_analyzer.cluster_coords[corner_idxs]
-
-        # Due to recognition errors, there are likely more than 4 corners present.
-        # We can distiguish them using the extreme-ness of their coordinates.
-        # Find the ones with the min/max x/y coordinates.
-
-        # This is a heuristic but it generally works really well
-        n1 = np.argmin(corner_coords[:, 0])
-        n2 = np.argmin(corner_coords[:, 1])
-        n3 = np.argmax(corner_coords[:, 0])
-        n4 = np.argmax(corner_coords[:, 1])
-
-        return np.rint(np.asarray(corner_coords[[n1, n2, n3, n4]])).astype(int)
-
 
 
 
@@ -321,15 +297,16 @@ class ContourAnalyzer(object):
         maxx_maxy = np.argmax(minmax_unmodified)
         # Copy and modify the array
         ccopy = self.cluster_coords.copy()
-        ccopy[:, 1] = np.reciprocal(ccopy[:, 1])  # multiply Y by -1
+        ccopy[:, 1] = np.reciprocal(ccopy[:, 1])  # multiply Y by -1, results in X/-Y
         minx_maxy = np.argmin(np.prod(ccopy, axis=1))
 
         ccopy = self.cluster_coords.copy()
-        ccopy[:, 0] = np.reciprocal(ccopy[:, 0])  # multiply Y by -1
-
+        ccopy[:, 0] = np.reciprocal(ccopy[:, 0])  # multiply X/Y by -1, results in -X/Y
         maxx_miny = np.argmin(np.prod(ccopy, axis=1))
 
-        return np.rint(self.cluster_coords[[minx_miny, maxx_miny, maxx_maxy, minx_maxy, minx_miny]]).astype(np.int)
+        corners = np.rint(self.cluster_coords[[minx_miny, maxx_miny, maxx_maxy, minx_maxy, minx_miny]]).astype(np.int)
+        self.table_corners = corners
+        return corners
 
     def compute_missing_cells_mask(self, img, close_ksize=5):
         """
@@ -339,7 +316,7 @@ class ContourAnalyzer(object):
         icellmask = np.full((img.shape[0], img.shape[1]), 255, np.uint8)
 
         # Mask everything except table, as defined by corner nodes (not the larger super-node!)
-        cv2.fillConvexPoly(icellmask, self.find_table_corners(), 0)
+        cv2.fillConvexPoly(icellmask, self.table_corners, 0)
         # Now draw all cell hulls without text, but don't downsize them()
         self.draw_all_cell_hulls(icellmask, None, xscale=1.1, yscale=1.1)
 

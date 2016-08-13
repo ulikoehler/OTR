@@ -2,7 +2,7 @@
 \documentclass[tikz, border=1mm]{standalone}
 \usepackage{siunitx}
 \begin{document}
-\usetikzlibrary{shapes,arrows,shadows,calc,backgrounds,fit}
+\usetikzlibrary{shapes,arrows,shadows,calc,backgrounds,fit,positioning}
 
 \tikzset{
   sshadow/.style={opacity=.25, shadow xshift=0.1, shadow yshift=-0.1},
@@ -12,6 +12,9 @@
     block/.style ={rectangle, draw=black, thick,
       text width=25em, text centered, rounded corners,
       minimum height=4em},
+    shortblock/.style ={rectangle, draw=black, thick,
+      text width=10em, text centered, rounded corners,
+      minimum height=4em},
     nodegroup/.style ={rectangle, draw=black, thick, rounded corners,
       minimum height=4em, bottom color=black!55, top color=black!25},
     red/.style ={bottom color=red!55, top color=red!25, drop shadow={sshadow,color=black!80!white}},
@@ -19,35 +22,37 @@
     blue/.style ={bottom color=blue!55, top color=blue!25, drop shadow={sshadow,color=black!80!white}},
     yellow/.style ={bottom color=yellow!55, top color=yellow!25, drop shadow={sshadow,color=black!80!white}},
     purple/.style ={bottom color=purple!55, top color=purple!25, drop shadow={sshadow,color=black!80!white}},
-    line/.style ={draw, thick, -latex', shorten >=0pt}]
+    line/.style ={thick, -latex', shorten >=0pt},
+    firstpass/.style={draw=black},
+    secondpass/.style={draw=red}]
 
-\matrix [column sep=5mm,row sep=8mm] {
-  \node [block,red] (a) {Read image from file}; &\\
-  \node [block,red] (b) {Convert to binary B/W using threshold}; &\\
-  \node [block,red] (c) {Morphological preprocessing\\(Dilation \& erosion)}; &\\&\\
+\matrix [column sep=10mm,row sep=8mm] {
+  \node [block, red] (a) {Read image from file}; &\\
+  \node [block, red] (b) {Convert to binary B/W using threshold}; &\\
+  \node [block, red] (c) {Morphological preprocessing\\(Dilation \& erosion)}; &\\&\\
 
-  \node [block,green] (d) {Recognize image contours \& contour hierarchy}; &\\
-  \node [block,green] (e) {Prefilter contours by area \& minimum number of nodes}; &\\
-  \node [block,green] (f) {Build tree from contour hierarchy}; &\\
-  \node [block,green] (g) {Identify coarse table contour (contour with the largest outdegree)}; &\\
-  \node [block,green] (h) {Remove all contours which are not direct subcontours of the coarse table contour}; &\\
-  \node [block,green] (i) {Computing rotated bounding boxes \& areas for all contours}; &\\
-  \node [block,green] (j) {Remove coarse table contour from contour list \& store separately}; &\\&\\
+  \node [block, green] (d) {Recognize image contours \& contour hierarchy}; &\\
+  \node [block, green] (e) {Prefilter contours by area \& minimum number of nodes}; &\\
+  \node [block, green] (f) {Build tree from contour hierarchy}; &\\
+  \node [block, green] (g) {Identify coarse table contour (contour with the largest outdegree)}; &\\
+  \node [block, green] (h) {Remove all contours which are not direct subcontours of the coarse table contour};
+      & \node [shortblock, yellow] (ra) {Insert missing cell contours into main contours}; \\
+  \node [block, green] (i) {Computing rotated bounding boxes \& areas for all contours}; &\\
+  \node [block, green] (j) {Remove coarse table contour from contour list \& store separately}; &\\&\\
 
-  \node [block,blue] (k) {Find clusters of contour bounding box corners ("nodes") by pairwise euclidean distance \& threshold}; &\\
-  \node [block,blue] (l) {Compute node position by averaging all merged corner coordinates}; &\\
-  \node [block,blue] (m) {Compute cell hulls by replacing contour bounding box corners by their respective nodes}; &\\
-  \node [block,blue] (n) {Find fine table corners as 4 nodes with min/max X/Y combinations}; &\\&\\
+  \node [block, blue] (k) {Find clusters of contour bounding box corners ("nodes") by pairwise euclidean distance \& threshold};
+    & \node [block, yellow] (r) {Filter missing cell contours: Keep only contours with all nodes inside fine table corner-defined polygon}; \\
+  \node [block, blue] (l) {Compute node position by averaging all merged corner coordinates};
+    & \node [block, yellow] (q) {Find contours in binary mask ("missing cell contours")}; \\
+  \node [block, blue] (m) {Compute cell hulls by replacing contour bounding box corners by their respective nodes};
+    & \node [block, yellow] (p) {Draw each table cell with 1.1 center-referred scale to binary mask in white (mask now contains table space that is not part of a cell)}; &\\
+  \node [block, blue] (n) {Find fine table corners as 4 nodes with min/max X/Y combinations};
+    & \node [block, yellow] (o) {Create white img-sized binary mask and draw polygon defined by all 4 fine table corners in black.}; &\\&\\
 
-  \node [block,yellow] (o) {Create white img-sized binary mask and draw polygon defined by all 4 fine table corners in black.}; &\\
-  \node [block,yellow] (p) {Draw each table cell with 1.1 center-referred scale to binary mask in white (mask now contains table space that is not part of a cell)}; &\\
-  \node [block,yellow] (q) {Find contours in binary mask ("missing cell contours")}; &\\
-  \node [block,yellow] (r) {Filter missing cell contours: Keep only contours with all nodes inside fine table corner-defined polygon}; &\\&\\
-
-  \node [block,purple] (s) {Compute cell centers by using   cell hull center of gravity}; &\\
-  \node [block,purple] (t) {Compute horizontal and vertical groups (hgroups \& vgroups) of nodes by pairwise distance \& threshold}; &\\
-  \node [block,purple] (u) {Compute transitive closures of preliminary hgroups \& vgroups to obtain final hgroups/vgroups}; &\\
-  \node [block,purple] (v) {Sort hgroups by mean X coordinate and sort vgroups by mean Y coordinate to obtain table coordinates for each cell}; &\\
+  \node [block, purple] (s) {Compute cell centers by using   cell hull center of gravity}; &\\
+  \node [block, purple] (t) {Compute horizontal and vertical groups (hgroups \& vgroups) of nodes by pairwise distance \& threshold}; &\\
+  \node [block, purple] (u) {Compute transitive closures of preliminary hgroups \& vgroups to obtain final hgroups/vgroups}; &\\
+  \node [block, purple] (v) {Sort hgroups by mean X coordinate and sort vgroups by mean Y coordinate to obtain table coordinates for each cell}; &\\
 };
 
 % Group boxes & labels
@@ -56,46 +61,59 @@
   \coordinate (a') at ($(a.north) + (-3mm,4mm)$);
   \coordinate (d') at ($(d.north) + (-3mm,4mm)$);
   \coordinate (k') at ($(k.north) + (-3mm,4mm)$);
-  \coordinate (o') at ($(o.north) + (-3mm,4mm)$);
+  \coordinate (r') at ($(r.north) + (-3mm,4mm)$); % opqr is in rqpo order
   \coordinate (s') at ($(s.north) + (-3mm,4mm)$);
   % Actual group boxes
   \node[nodegroup, inner sep=4mm, fit=(a') (b) (c)] (g1) {};
   \node[nodegroup, inner sep=4mm, fit=(d') (e) (f) (g) (h) (i) (j)] (g2) {};
   \node[nodegroup, inner sep=4mm, fit=(k') (l) (m) (n)] (g3) {};
-  \node[nodegroup, inner sep=4mm, fit=(o') (p) (q) (r)] (g4) {};
+  \node[nodegroup, inner sep=4mm, fit=(r') (q) (p) (o)] (g4) {};
   \node[nodegroup, inner sep=4mm, fit=(s') (t) (u) (v)] (g5) {};
   % Labels
   \node[below right] at (g1.north west) {\large\textbf{Preprocessing}};
   \node[below right] at (g2.north west) {\large\textbf{Cell contour detection}};
   \node[below right] at (g3.north west) {\large\textbf{Corner clustering \& cell detection}};
   \node[below right] at (g4.north west) {\large\textbf{Missing cell detection}};
-  \node[below right] at (g5.north west) {\large\textbf{Table coordinte computation}};
+  \node[below right] at (g5.north west) {\large\textbf{Table coordinate computation}};
 \end{scope}
 
 % Arrows between nodes
 \begin{scope}[every path/.style=line]
-  % paths for enrollemnt rows
-  \path (a) -- (b);
-  \path (b) -- (c);
-  \path (c) -- (d);
-  \path (d) -- (e);
-  \path (e) -- (f);
-  \path (f) -- (g);
-  \path (g) -- (h);
-  \path (h) -- (i);
-  \path (i) -- (j);
-  \path (j) -- (k);
-  \path (k) -- (l);
-  \path (l) -- (m);
-  \path (m) -- (n);
-  \path (n) -- (o);
-  \path (o) -- (p);
-  \path (p) -- (q);
-  \path (q) -- (r);
-  \path (r) -- (s);
-  \path (s) -- (t);
-  \path (t) -- (u);
-  \path (u) -- (v);
+  % First pass
+  \path[firstpass] (a) -- (b);
+  \path[firstpass] (b) -- (c);
+  \path[firstpass] (c) -- (d);
+  \path[firstpass] (d) -- (e);
+  \path[firstpass] (e) -- (f);
+  \path[firstpass] (f) -- (g);
+  \path[firstpass] (g) -- (h);
+  \path[firstpass] (h) -- (i);
+  \path[firstpass] (i) -- (j);
+  \path[firstpass] (j) -- (k);
+  \path[firstpass] (k) -- (l);
+  \path[firstpass] (l) -- (m);
+  \path[firstpass] (m) -- (n);
+  \path[firstpass] (n) -- (o);
+  \path[firstpass] (o) -- (p);
+  \path[firstpass] (p) -- (q);
+  \path[firstpass] (q) -- (r);
+  % Missing edge loop
+  \path[firstpass, rounded corners=5pt] (r) -- (ra);
+  \path[secondpass, rounded corners=5pt] (ra) |- (e);
+  % Second pass
+  \path[secondpass] ([xshift=5mm]e.south) -- ([xshift=5mm]f.north);
+  \path[secondpass] ([xshift=5mm]f.south) -- ([xshift=5mm]g.north);
+  \path[secondpass] ([xshift=5mm]g.south) -- ([xshift=5mm]h.north);
+  \path[secondpass] ([xshift=5mm]h.south) -- ([xshift=5mm]i.north);
+  \path[secondpass] ([xshift=5mm]i.south) -- ([xshift=5mm]j.north);
+  \path[secondpass] ([xshift=5mm]j.south) -- ([xshift=5mm]k.north);
+  \path[secondpass] ([xshift=5mm]k.south) -- ([xshift=5mm]l.north);
+  \path[secondpass] ([xshift=5mm]l.south) -- ([xshift=5mm]m.north);
+  \path[secondpass] ([xshift=5mm]m.south) -- ([xshift=5mm]n.north);
+  \path[secondpass] ([xshift=0mm]n.south) -- ([xshift=0mm]s.north);
+  \path[secondpass] ([xshift=0mm]s.south) -- ([xshift=0mm]t.north);
+  \path[secondpass] ([xshift=0mm]t.south) -- ([xshift=0mm]u.north);
+  \path[secondpass] ([xshift=0mm]u.south) -- ([xshift=0mm]v.north);
 \end{scope}
 \end{tikzpicture}
 
