@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import cv2
-from matplotlib import pyplot as plt
 import numpy as np
-import time as t
 import cv_algorithms
-import collections
 import networkx as nx
 import operator
-import scipy.signal
 import scipy.spatial.distance
 from UliEngineering.SignalProcessing.Selection import multiselect
 from UliEngineering.Utils.NumPy import invert_bijection
@@ -196,9 +192,8 @@ class ContourAnalyzer(object):
             area = cv2.contourArea(self.contours[i])
             # Check if node shall be removed
             if area < min_area or num_nodes < min_nodes:
-                self.g.remove_node(i)
                 self.contours[i] = None
-                
+
     def remove_non_table_nodes(self):
         """
         Identify the topmost table node ("supernode") (i.e. the node with the most direct children)
