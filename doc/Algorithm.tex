@@ -35,17 +35,17 @@
   \node [block, green] (e) {Prefilter contours by area \& minimum number of nodes}; &\\
   \node [block, green] (f) {Build tree from contour hierarchy}; &\\
   \node [block, green] (g) {Identify coarse table contour (contour with the largest outdegree)}; &\\
-  \node [block, green] (h) {Remove all contours which are not direct subcontours of the coarse table contour};
-      & \node [shortblock, yellow] (ra) {Insert missing cell contours into main contours}; \\
+  \node [block, green] (h) {Remove all contours which are not direct subcontours of the coarse table contour};\\
   \node [block, green] (i) {Computing rotated bounding boxes \& areas for all contours}; &\\
-  \node [block, green] (j) {Remove coarse table contour from contour list \& store separately}; &\\&\\
+  \node [block, green] (j) {Remove coarse table contour from contour list \& store separately};
+      & \node [shortblock, yellow] (ra) {Insert missing cell contours into contour list}; \\&\\
 
   \node [block, blue] (k) {Find clusters of contour bounding box corners ("nodes") by pairwise euclidean distance \& threshold};
     & \node [block, yellow] (r) {Filter missing cell contours: Keep only contours with all nodes inside fine table corner-defined polygon}; \\
   \node [block, blue] (l) {Compute node position by averaging all merged corner coordinates};
     & \node [block, yellow] (q) {Find contours in binary mask ("missing cell contours")}; \\
   \node [block, blue] (m) {Compute cell hulls by replacing contour bounding box corners by their respective nodes};
-    & \node [block, yellow] (p) {Draw each table cell with 1.1 center-referred scale to binary mask in white (mask now contains table space that is not part of a cell)}; &\\
+    & \node [block, yellow] (p) {Draw each table cell with 110\,\% center-referred scale to binary mask in white (mask now contains table space that is not part of a cell)}; &\\
   \node [block, blue] (n) {Find fine table corners as 4 nodes with min/max X/Y combinations};
     & \node [block, yellow] (o) {Create white img-sized binary mask and draw polygon defined by all 4 fine table corners in black.}; &\\&\\
 
@@ -99,12 +99,8 @@
   \path[firstpass] (q) -- (r);
   % Missing edge loop
   \path[firstpass, rounded corners=5pt] (r) -- (ra);
-  \path[secondpass, rounded corners=5pt] (ra) |- (e);
+  \path[secondpass, rounded corners=5pt] (ra) |- (i);
   % Second pass
-  \path[secondpass] ([xshift=5mm]e.south) -- ([xshift=5mm]f.north);
-  \path[secondpass] ([xshift=5mm]f.south) -- ([xshift=5mm]g.north);
-  \path[secondpass] ([xshift=5mm]g.south) -- ([xshift=5mm]h.north);
-  \path[secondpass] ([xshift=5mm]h.south) -- ([xshift=5mm]i.north);
   \path[secondpass] ([xshift=5mm]i.south) -- ([xshift=5mm]j.north);
   \path[secondpass] ([xshift=5mm]j.south) -- ([xshift=5mm]k.north);
   \path[secondpass] ([xshift=5mm]k.south) -- ([xshift=5mm]l.north);

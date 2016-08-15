@@ -52,6 +52,22 @@ def transitive_closure(clusters):
     return transitive_clusters, cluster_lut
 
 
+
+def is_inside_table(polygon, reference):
+    """
+    Determine if a given polygon is fully located inside
+    This works by checking if all polygon points are within (or on the edge of)
+    the reference 
+
+    returns True if and only if polygon is fully within or identical to the reference.
+    """
+    brect = cv2.boxPoints(cv2.minAreaRect(polygon))
+    # All points need to be inside table corners
+    for point in brect:
+        if cv2.pointPolygonTest(reference, tuple(point), False) < 0:
+            return False  # Not in contour
+    return True
+
 def angle_degrees(dx, dy):
     if dx == 0: return 180.
     return np.rad2deg(np.arctan2(dx, dy))
@@ -64,16 +80,16 @@ class ContourAnalyzer(object):
         im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS, **kwargs)
         self.hierarchy = hierarchy
         self.contours = contours
-        
+
+    @property
+    def size(self):
+        return len(self.contours)
+
     def build_graph(self):
         # Contour to graph
         self.g = nx.DiGraph()
         # Add each contour as node (by index)
         self.g.add_nodes_from(range(self.hierarchy.shape[1]))
-        
-        # Contour attributes
-        self.areas = np.zeros(self.hierarchy.shape[1])
-        self.num_nodes = np.zeros_like(self.areas)
         # Build graph from hierarchy
         for i in range(self.hierarchy.shape[1]):
             # Skip already invalidated contours
@@ -81,10 +97,6 @@ class ContourAnalyzer(object):
             nxt, prev, first_child, parent = self.hierarchy[0, i]
             if parent != -1:
                 self.g.add_edge(parent, i)
-            # Compute key contour parameters
-            self.areas[i] = cv2.contourArea(self.contours[i])
-            self.num_nodes[i] = self.contours[i].shape[0]
-
 
     def compute_cell_polygons(self):
         """
@@ -176,8 +188,14 @@ class ContourAnalyzer(object):
             - With less than a specific area (square px)
             - With less than n nodes (usually 4)
         """
-        for i in range(self.areas.shape[0]):
-            if self.areas[i] < min_area or self.num_nodes[i] < min_nodes:
+        for i in range(self.size):
+            # Skip already invalidated contours
+            if self.contours[i] is None: continue
+            # Compute key parameters
+            num_nodes = self.contours[i].shape[0]
+            area = cv2.contourArea(self.contours[i])
+            # Check if node shall be removed
+            if area < min_area or num_nodes < min_nodes:
                 self.g.remove_node(i)
                 self.contours[i] = None
                 
@@ -204,13 +222,13 @@ class ContourAnalyzer(object):
         Compute rotated min-area bounding boxes for every contour
         """
         self.contours_bbox = [None] * len(self.contours)
-        self.aspect_ratios =  np.zeros_like(self.areas) # of rotated bounding boxes
+        self.aspect_ratios = np.zeros(self.size) # of rotated bounding boxes
         for i in range(len(self.contours)):
             if self.contours[i] is None: continue
             # Compute rotated bounding rectangle (4 points)
             bbox = cv2.minAreaRect(self.contours[i])
             # Compute aspect ratio
-            (x1,y1), (x2,y2), angle = bbox
+            (x1, y1), (x2, y2), angle = bbox
             self.aspect_ratios[i] = np.abs(x2 - x1) / np.abs(y2 - y1)
             # Convert to 4-point rotated box, convert to int and set as new contour
             self.contours_bbox[i] = np.rint(cv2.boxPoints(bbox)).astype(np.int)
@@ -232,7 +250,7 @@ class ContourAnalyzer(object):
         Find out which cells are empty by 
         """
         # Compute which cells are empty
-        self.is_contour_empty = np.zeros_like(self.areas, np.bool) # of rotated bounding boxes
+        self.is_contour_empty = np.zeros(self.size, np.bool) # of rotated bounding boxes
         for i in range(len(self.contours)):
             if self.contours[i] is None: continue
             sect = cv_algorithms.extractPolygonMask(img, self.contours_bbox[i])
@@ -286,9 +304,9 @@ class ContourAnalyzer(object):
         self.cluster_num_nodes = np.asarray(cluster_num_nodes)
         self.cluster_coords_to_node_id = cluster_coords_to_node_id
 
-    def find_table_corners(self):
+    def find_fine_table_corners(self):
         """
-        Find table corners. This function works on cluster coordinates.
+        Find fine table corners. This function works on cluster coordinates.
         It returns the ones with the most extreme coordinates, intermixing X/Y coordinates.
         """
         # The absolute min/max (top left / bot right corner) can be found without array modification3
@@ -329,6 +347,17 @@ class ContourAnalyzer(object):
     def compute_missing_cell_contours(self, missing_cells_mask):
         _, contx, _ = cv2.findContours(missing_cells_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
         return contx
+
+    def compute_filtered_missing_cell_contours(self, img):
+        """
+        Filter the given missing
+        """
+        missing_cells_mask = self.compute_missing_cells_mask(img)
+        missing_cell_contours = self.compute_missing_cell_contours(missing_cells_mask)
+        table_corners = self.table_corners  # fine table corners
+        # Perform filtering
+        return [c for c in missing_cell_contours if is_inside_table(c, table_corners)]
+
 
     def extract_cell_from_image(self, img, table_coords, xscale=3, yscale=3, mark_color=(255,0,0), mark_thickness=1):
         """
