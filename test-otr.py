@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 import cv2
 import numpy as np
-import time as t
-import cv_algorithms
-import collections
-import operator
-import scipy.signal
-import scipy.spatial.distance
 import TableRecognition
-from UliEngineering.SignalProcessing.Selection import *
 
 
 def runOTR(filename):
@@ -36,7 +29,7 @@ def runOTR(filename):
     contour_analyzer.find_fine_table_corners()
 
     # Add missing contours to contour list
-    missing_contours = contour_analyzer.compute_filtered_missing_cell_contours(img)
+    missing_contours = contour_analyzer.compute_filtered_missing_cell_contours()
     contour_analyzer.contours += missing_contours
 
     # 2nd pass (red in algorithm diagram)

@@ -76,6 +76,7 @@ class ContourAnalyzer(object):
         im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS, **kwargs)
         self.hierarchy = hierarchy
         self.contours = contours
+        self.imgshape = img.shape
 
     @property
     def size(self):
@@ -239,7 +240,24 @@ class ContourAnalyzer(object):
         # Invalidate in normal storage
         self.contours[self.supernode_idx] = None
         self.contours_bbox[self.supernode_idx] = None
-        
+
+    def does_page_have_valid_table(self, min_fract_area=.2, min_cells=50):
+        """
+        Analyzes whether the image contains a table by evaluating the
+        coarse table outline and its children
+        """
+        try: # Some CV2 operations may fail e.g. if no correct supernode has been recognized
+            # Check fractional area of table compared to image
+            img_area = self.imgshape[0] * self.imgshape[1]
+            supernode_area = cv2.contourArea(self.supernode_bbox)
+            if supernode_area < img_area * min_fract_area:
+                return False
+            # Check minimum number of cells (ncells = degree of coarse outline node)
+            ncells = self.g.degree(self.supernode_idx)
+            return ncells >= min_cells
+        except cv2.error:
+            return False
+
     def find_empty_cells(self, img, threshold=.998):
         """
         Find out which cells are empty by 
@@ -321,12 +339,12 @@ class ContourAnalyzer(object):
         self.table_corners = corners
         return corners
 
-    def compute_missing_cells_mask(self, img, close_ksize=5):
+    def compute_missing_cells_mask(self, close_ksize=5):
         """
-        Compute a binary img-scale mask, 
+        Compute a binary img-scale mask,
         """
         # Create white binary img
-        icellmask = np.full((img.shape[0], img.shape[1]), 255, np.uint8)
+        icellmask = np.full((self.imgshape[0], self.imgshape[1]), 255, np.uint8)
 
         # Mask everything except table, as defined by corner nodes (not the larger super-node!)
         cv2.fillConvexPoly(icellmask, self.table_corners, 0)
@@ -343,11 +361,11 @@ class ContourAnalyzer(object):
         _, contx, _ = cv2.findContours(missing_cells_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
         return contx
 
-    def compute_filtered_missing_cell_contours(self, img):
+    def compute_filtered_missing_cell_contours(self):
         """
         Filter the given missing
         """
-        missing_cells_mask = self.compute_missing_cells_mask(img)
+        missing_cells_mask = self.compute_missing_cells_mask()
         missing_cell_contours = self.compute_missing_cell_contours(missing_cells_mask)
         table_corners = self.table_corners  # fine table corners
         # Perform filtering
