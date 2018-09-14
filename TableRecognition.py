@@ -205,7 +205,7 @@ class ContourAnalyzer(object):
         This will remove stuff nested inside table cells and nodes outside the table
         The nodes are not removed from the graph.
         """
-        self.supernode_idx = max(self.g.degree().items(), key=operator.itemgetter(1))[0]
+        self.supernode_idx = max(dict(self.g.degree()).items(), key=operator.itemgetter(1))[0]
         for i in range(len(self.contours)):
             if self.contours[i] is None: continue
             nxt, prev, first_child, parent = self.hierarchy[0, i]
