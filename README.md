@@ -5,7 +5,7 @@ Optical table recognition - recognize tables in scan images using OpenCV
 
 Install OpenCV for Python3 e.g. `sudo apt-get install python3-opencv` in Ubuntu 18.04.
 
-Dependency: ![cv_algorithms](https://github.com/ulikoehler/cv_algorithms)
+Dependency: [cv_algorithms](https://github.com/ulikoehler/cv_algorithms)
 ```sh
 sudo pip3 install git+https://github.com/ulikoehler/cv_algorithms.git
 ```
@@ -18,4 +18,4 @@ Get a test image, e.g. google for images like "Old naval log table" and select o
 python3 test-otr.py <image filename>
 ```
 
-It's currently only a proof of concept. See ![Algorithm.pdf](https://github.com/ulikoehler/OTR/blob/master/doc/Algorithm.pdf) for details on how it works.
+It's currently only a proof of concept. See [Algorithm.pdf](https://github.com/ulikoehler/OTR/blob/master/doc/Algorithm.pdf) for details on how it works.
