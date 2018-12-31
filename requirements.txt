@@ -1,2 +1,5 @@
 git+https://github.com/ulikoehler/cv_algorithms.git
+git+https://github.com/ulikoehler/UliEngineering.git
 networkx
+scipy
+numpy

@@ -5,6 +5,8 @@ Optical table recognition - recognize tables in scan images using OpenCV
 
 Install OpenCV for Python3 e.g. `sudo apt-get install python3-opencv` in Ubuntu 18.04.
 
+I recommend to install numpy & scipy from apt if you use a deb-based linux system to speed up the dependency install: `sudo apt-get install python3-scipy python3-numpy`
+
 [cv_algorithms](https://github.com/ulikoehler/cv_algorithms) is one of the dependencies. See there for some of the algorithms used in OTR in a reusable form.
 
 ```sh
