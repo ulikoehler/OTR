@@ -1,5 +1,7 @@
 # OTR
-Optical table recognition - recognize tables in scan images using OpenCV
+Optical table recognition - recognize tables in scan images using OpenCV.
+
+OTR uses a raster-based method to recognize tables, even if they have e.g. dashed lines or the page is slightly skewed (such as when scanning a book). **OTR can not be used for tables without a visible raster!**
 
 # Install
 
