@@ -4,3 +4,4 @@ networkx
 scipy
 numpy
 toolz
+opencv-python
