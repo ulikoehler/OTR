@@ -73,7 +73,12 @@ def angle_degrees(dx, dy):
 
 class ContourAnalyzer(object):
     def __init__(self, img, **kwargs):
-        im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS, **kwargs)
+        tupl = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS, **kwargs)
+        # Fix for #8
+        if len(tupl) == 3:
+            im2, contours, hierarchy = tupl
+        elif len(tupl) == 2:
+            contours, hierarchy = tupl
         self.hierarchy = hierarchy
         self.contours = contours
         self.imgshape = img.shape
