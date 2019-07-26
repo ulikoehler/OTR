@@ -69,16 +69,21 @@ def angle_degrees(dx, dy):
     return np.rad2deg(np.arctan2(dx, dy))
 
 
-
+def _find_contours(*args, **kwargs):
+    """
+    Calls cv2.findContours(*args, **kwargs) and returns (contours, hierarchy)
+    """
+    tupl = cv2.findContours(*args, **kwargs)
+    # Fix for #8
+    if len(tupl) == 3:
+        im2, contours, hierarchy = tupl
+    elif len(tupl) == 2:
+        contours, hierarchy = tupl
+    return contours, hierarchy
 
 class ContourAnalyzer(object):
     def __init__(self, img, **kwargs):
-        tupl = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS, **kwargs)
-        # Fix for #8
-        if len(tupl) == 3:
-            im2, contours, hierarchy = tupl
-        elif len(tupl) == 2:
-            contours, hierarchy = tupl
+        contours, hierarchy = _find_contours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS, **kwargs)
         self.hierarchy = hierarchy
         self.contours = contours
         self.imgshape = img.shape
@@ -363,7 +368,7 @@ class ContourAnalyzer(object):
         return icellmask
 
     def compute_missing_cell_contours(self, missing_cells_mask):
-        _, contx, _ = cv2.findContours(missing_cells_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
+        contx, _ = _find_contours(missing_cells_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
         return contx
 
     def compute_filtered_missing_cell_contours(self):
